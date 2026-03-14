@@ -13,7 +13,16 @@ public class Splasher {
                 attackBestSplashTile(rc);
             }
         }
-
+        // In Splasher.run, before the enemy-bot movement block:
+        for (MapInfo tile : rc.senseNearbyMapInfos(rc.getLocation(), 8)) {
+            if (tile.getMark() != PaintType.EMPTY && tile.getMark() != tile.getPaint()) {
+                if (rc.isActionReady() && rc.canAttack(tile.getMapLocation())) {
+                    boolean useSecondary = tile.getMark() == PaintType.ALLY_SECONDARY;
+                    rc.attack(tile.getMapLocation(), useSecondary);
+                    break;
+                }
+            }
+        }
         // Priority 2: Move toward enemy bots or enemy ruins
         if (rc.isMovementReady()) {
             MapLocation target = findNearestEnemyEntity(rc);

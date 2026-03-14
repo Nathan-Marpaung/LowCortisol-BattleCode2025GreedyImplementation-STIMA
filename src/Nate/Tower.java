@@ -4,27 +4,35 @@ import battlecode.common.*;
 
 public class Tower {
 
+    static int spawnCounterMopper = 0;
+    static int spawnCounterSoldier = 0;
+    static int spawnCounterSplasher = 0;
     static int spawnCounter = 0;
-
     public static void run(RobotController rc) throws GameActionException {
         // --- Spawn units ---
         // Spend leftover chips by spawning as many per turn as possible
         while (true) {
-            UnitType toSpawn = chooseSpawnType(rc.getRoundNum());
+            UnitType toSpawn = chooseSpawnType();
             boolean built = tryBuild(rc, toSpawn);
-            if (!built) {
-                for (UnitType fallback : new UnitType[] { UnitType.SOLDIER, UnitType.MOPPER, UnitType.SPLASHER }) {
-                    if (fallback != toSpawn && tryBuild(rc, fallback)) {
-                        built = true;
-                        break;
-                    }
-                }
-            }
             if (built) {
                 spawnCounter++;
+                switch(toSpawn) {
+                    case MOPPER: spawnCounterMopper++; break;
+                    case SOLDIER: spawnCounterSoldier++; break;
+                    case SPLASHER: spawnCounterSplasher++; break;
+                }
             } else {
-                break; // Could not build any more
+                break; // No space to build, stop trying this turn
             }
+        }
+
+        for (MapInfo tile : rc.senseNearbyMapInfos()) {
+            if (!tile.hasRuin()) continue;
+            MapLocation ruinLoc = tile.getMapLocation();
+            RobotInfo occupant = rc.canSenseLocation(ruinLoc) ? rc.senseRobotAtLocation(ruinLoc) : null;
+            if (occupant != null && occupant.getTeam() == rc.getTeam()) continue; // already built
+            UnitType t = Soldier.chooseTowerType(ruinLoc);
+            if (rc.canMarkTowerPattern(t, ruinLoc)) rc.markTowerPattern(t, ruinLoc);
         }
 
         // --- Tower attacks nearest enemy ---
@@ -42,36 +50,62 @@ public class Tower {
      * Early: [SOLDIER, SOLDIER, MOPPER, SOLDIER, SPLASHER] → 60/20/20
      * Late: [SPLASHER, SOLDIER, MOPPER, SOLDIER, SPLASHER] → 40/40/20 (gentle splasher bias)
      */
-    static UnitType chooseSpawnType(int round) {
+    static UnitType chooseSpawnType() {
         int idx = spawnCounter % 5;
-        if (round <= Util.EARLY_PHASE_END) {
-            // Early: prioritize soldiers to explore ruins.
-            switch (idx) {
+        if (spawnCounterSoldier <= 10){
+            switch(idx) {
                 case 0:
                 case 1:
-                case 3:
-                    return UnitType.SOLDIER;
                 case 2:
-                    return UnitType.MOPPER;
-                default:
-                    return UnitType.SPLASHER;
-            }
-        } else {
-            // Late: keep soldiers dominant, but still strong splasher presence.
-            switch (idx) {
-                case 0:
-                case 4:
-                    return UnitType.SPLASHER;
-                case 2: 
-                    return UnitType.MOPPER;
-                case 1:
                     return UnitType.SOLDIER;
                 case 3:
-                    return UnitType.SOLDIER;
-                default:
-                    return UnitType.SOLDIER;
+                    return UnitType.SPLASHER;
+                case 4:
+                    return UnitType.MOPPER;
             }
+            return UnitType.SOLDIER;
         }
+        switch(idx){
+            case 0:
+            case 3:
+                return UnitType.SOLDIER;
+            case 1:
+            case 4:
+                return UnitType.SPLASHER;
+            case 2:
+                return UnitType.MOPPER;
+        }
+        return UnitType.SOLDIER;
+         // should never happen
+
+        // if (round <= Util.EARLY_PHASE_END) {
+        //     // Early: prioritize soldiers to explore ruins.
+        //     switch (idx) {
+        //         case 0:
+        //         case 1:
+        //         case 3:
+        //             return UnitType.SOLDIER;
+        //         case 2:
+        //             return UnitType.MOPPER;
+        //         default:
+        //             return UnitType.SPLASHER;
+        //     }
+        // } else {
+        //     // Late: keep soldiers dominant, but still strong splasher presence.
+        //     switch (idx) {
+        //         case 0:
+        //         case 4:
+        //             return UnitType.SPLASHER;
+        //         case 2: 
+        //             return UnitType.MOPPER;
+        //         case 1:
+        //             return UnitType.SOLDIER;
+        //         case 3:
+        //             return UnitType.SOLDIER;
+        //         default:
+        //             return UnitType.SOLDIER;
+        //     }
+        // }
     }
 
     static boolean tryBuild(RobotController rc, UnitType type) throws GameActionException {

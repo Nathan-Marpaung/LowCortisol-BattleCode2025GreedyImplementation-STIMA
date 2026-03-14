@@ -20,15 +20,32 @@ public class Util {
     };
 
     public static MapLocation findNearestUnpainted(RobotController rc) throws GameActionException {
+        MapLocation myLoc = rc.getLocation();
         MapLocation best = null;
-        int bestDist = Integer.MAX_VALUE;
+        double bestScore = Double.NEGATIVE_INFINITY;
+
+        // Count nearby allies for crowding penalty (radius-sq 9 ≈ 3-tile radius)
+        int nearbyAllies = rc.senseNearbyRobots(9, rc.getTeam()).length;
+
         for (MapInfo tile : rc.senseNearbyMapInfos()) {
-            if (tile.getPaint().isAlly() || tile.isWall())
+            if (tile.getPaint().isAlly() || tile.isWall() || checkTeamRuin(rc, tile))
                 continue;
-            int d = rc.getLocation().distanceSquaredTo(tile.getMapLocation());
-            if (d < bestDist) {
-                bestDist = d;
-                best = tile.getMapLocation();
+
+            MapLocation loc = tile.getMapLocation();
+            int dist = myLoc.distanceSquaredTo(loc);
+
+            // Prefer enemy paint (push into their territory), then empty
+            double score = tile.getPaint().isEnemy() ? 20 : 8;
+
+            // Reward tiles further away so bots push outward instead of huddling
+            score += dist * 0.6;
+
+            // Penalise crowded areas — deters bots from piling onto the same spot
+            score -= nearbyAllies * 4;
+
+            if (score > bestScore) {
+                bestScore = score;
+                best = loc;
             }
         }
         return best;
@@ -68,12 +85,31 @@ public class Util {
     }
 
     public static void randomMove(RobotController rc) throws GameActionException {
-        for (int i = 0; i < 16; i++) {
-            Direction d = directions[rng.nextInt(directions.length)];
+        // Use robot's own position + round as offset so each bot picks a different direction
+        MapLocation loc = rc.getLocation();
+        int offset = (loc.x * 7 + loc.y * 13 + rc.getRoundNum()) & 7;
+        for (int i = 0; i < 8; i++) {
+            Direction d = directions[(offset + i) & 7];
             if (rc.canMove(d)) {
                 rc.move(d);
                 return;
             }
         }
+    }
+    
+    public static boolean checkTeamRuin(RobotController rc, MapInfo tile) throws GameActionException {
+        if (tile.hasRuin()) {
+            MapLocation ruinLoc = tile.getMapLocation();
+
+            if (rc.canSenseLocation(ruinLoc)) {
+                RobotInfo robotAt = rc.senseRobotAtLocation(ruinLoc);
+                if (robotAt != null
+                        && robotAt.getTeam() == rc.getTeam()
+                        && robotAt.getType().isTowerType()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
