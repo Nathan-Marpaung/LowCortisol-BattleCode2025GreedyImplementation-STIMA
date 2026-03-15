@@ -4,9 +4,9 @@ import battlecode.common.*;
 
 public class Tower {
 
-    static int spawnCounterMopper = 0;
+    // static int spawnCounterMopper = 0;
     static int spawnCounterSoldier = 0;
-    static int spawnCounterSplasher = 0;
+    // static int spawnCounterSplasher = 0;
     static int spawnCounter = 0;
     public static void run(RobotController rc) throws GameActionException {
         // --- Spawn units ---
@@ -16,11 +16,7 @@ public class Tower {
             boolean built = tryBuild(rc, toSpawn);
             if (built) {
                 spawnCounter++;
-                switch(toSpawn) {
-                    case MOPPER: spawnCounterMopper++; break;
-                    case SOLDIER: spawnCounterSoldier++; break;
-                    case SPLASHER: spawnCounterSplasher++; break;
-                }
+                if (toSpawn == UnitType.SOLDIER) spawnCounterSoldier++;
             } else {
                 break; // No space to build, stop trying this turn
             }
@@ -59,7 +55,7 @@ public class Tower {
                 case 2:
                     return UnitType.SOLDIER;
                 case 3:
-                    return UnitType.SPLASHER;
+                    return UnitType.MOPPER;
                 case 4:
                     return UnitType.MOPPER;
             }
@@ -70,10 +66,11 @@ public class Tower {
             case 3:
                 return UnitType.SOLDIER;
             case 1:
+                return UnitType.MOPPER;
             case 4:
                 return UnitType.SPLASHER;
             case 2:
-                return UnitType.MOPPER;
+                return UnitType.SPLASHER;
         }
         return UnitType.SOLDIER;
          // should never happen
