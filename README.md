@@ -54,14 +54,15 @@ Program ini memerlukan:
 ## Command atau Langkah-Langkah Compile / Build Program
 
 1. Clone repositori ini
-
+``
 git clone https://github.com/Nathan-Marpaung/LowCortisol-BattleCode2025GreedyImplementation-STIMA.git
-
+``
 2. Bot akan di develop pada directory tersebut
 3. Jalankan perintah berikut
+``
 ./gradlew build
 cd client
-
+``
 4. Buka aplikasi yang ada di client
 5. Pada tab queue pilih direktori LowCortisol-BattleCode2025GreedyImplementation-STIMA
 6. Ketiga bot dapat anda mainkan pada 75 pilihan map yang ada
