@@ -1,4 +1,4 @@
-package Richardv2;
+package introvert;
 
 import battlecode.common.*;
 import java.util.ArrayDeque;
