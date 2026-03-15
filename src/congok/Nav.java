@@ -4,6 +4,8 @@ import battlecode.common.*;
 
 public class Nav {
 
+    static Direction lastMoveDir = Direction.CENTER;
+
     static final Direction[] dirs={
         Direction.NORTH,
         Direction.NORTHEAST,
@@ -102,15 +104,31 @@ public class Nav {
 
     static boolean moveRandomly(RobotController rc, java.util.Random rng) throws GameActionException {
         if (!rc.isMovementReady()) return false;
-        int start=rng.nextInt(8);
-        for (int i=0; i<8; i++) {
-            Direction d=dirs[(start+i)%8];
-            if (rc.canMove(d)) {
-                rc.move(d);
-                return true;
+
+        Direction reverse=lastMoveDir.opposite();
+
+        Direction[] valid=new Direction[8];
+        int count=0;
+        for (Direction d : dirs) {
+            if (rc.canMove(d) && d != reverse) {
+                valid[count++]=d;
             }
         }
-        return false;
+
+        if (count==0) {
+            for (Direction d : dirs) {
+                if (rc.canMove(d)){
+                    valid[count++]=d;
+                }
+            }
+        }
+
+        if (count==0) return false;
+
+        Direction chosen=valid[rng.nextInt(count)];
+        rc.move(chosen);
+        lastMoveDir=chosen;
+        return true;
     }
 
     static int dirIndex(Direction d) {
