@@ -1,11 +1,11 @@
-package Nate;
+package TowerAndExplore;
 
 import battlecode.common.*;
 import java.util.Random;
 
 public class Util {
 
-    public static final int EARLY_PHASE_END = 800;
+    public static final int earlyEnd = 800;
     public static final Random rng = new Random(6147);
 
     public static final Direction[] directions = {
@@ -24,23 +24,17 @@ public class Util {
         MapLocation best = null;
         double bestScore = Double.NEGATIVE_INFINITY;
 
-        // Count nearby allies for crowding penalty (radius-sq 9 ≈ 3-tile radius)
         int nearbyAllies = rc.senseNearbyRobots(9, rc.getTeam()).length;
 
         for (MapInfo tile : rc.senseNearbyMapInfos()) {
-            if (tile.getPaint().isAlly() || tile.isWall() || checkTeamRuin(rc, tile))
+            if (tile.getPaint().isAlly() || tile.isWall() || isOurRuin(rc, tile))
                 continue;
 
             MapLocation loc = tile.getMapLocation();
             int dist = myLoc.distanceSquaredTo(loc);
 
-            // Prefer enemy paint (push into their territory), then empty
             double score = tile.getPaint().isEnemy() ? 20 : 8;
-
-            // Reward tiles further away so bots push outward instead of huddling
             score += dist * 0.6;
-
-            // Penalise crowded areas — deters bots from piling onto the same spot
             score -= nearbyAllies * 4;
 
             if (score > bestScore) {
@@ -56,8 +50,7 @@ public class Util {
         MapLocation best = null;
         int bestDist = Integer.MAX_VALUE;
         for (RobotInfo ally : allies) {
-            if (!ally.getType().isTowerType())
-                continue;
+            if (!ally.getType().isTowerType()) continue;
             int d = rc.getLocation().distanceSquaredTo(ally.getLocation());
             if (d < bestDist) {
                 bestDist = d;
@@ -68,8 +61,7 @@ public class Util {
     }
 
     public static void moveGreedy(RobotController rc, MapLocation target) throws GameActionException {
-        if (!rc.isMovementReady())
-            return;
+        if (!rc.isMovementReady()) return;
         Direction main = rc.getLocation().directionTo(target);
         Direction[] tries = {
                 main, main.rotateLeft(), main.rotateRight(),
@@ -85,7 +77,6 @@ public class Util {
     }
 
     public static void randomMove(RobotController rc) throws GameActionException {
-        // Use robot's own position + round as offset so each bot picks a different direction
         MapLocation loc = rc.getLocation();
         int offset = (loc.x * 7 + loc.y * 13 + rc.getRoundNum()) & 7;
         for (int i = 0; i < 8; i++) {
@@ -96,16 +87,13 @@ public class Util {
             }
         }
     }
-    
-    public static boolean checkTeamRuin(RobotController rc, MapInfo tile) throws GameActionException {
+
+    public static boolean isOurRuin(RobotController rc, MapInfo tile) throws GameActionException {
         if (tile.hasRuin()) {
             MapLocation ruinLoc = tile.getMapLocation();
-
             if (rc.canSenseLocation(ruinLoc)) {
-                RobotInfo robotAt = rc.senseRobotAtLocation(ruinLoc);
-                if (robotAt != null
-                        && robotAt.getTeam() == rc.getTeam()
-                        && robotAt.getType().isTowerType()) {
+                RobotInfo bot = rc.senseRobotAtLocation(ruinLoc);
+                if (bot != null && bot.getTeam() == rc.getTeam() && bot.getType().isTowerType()) {
                     return true;
                 }
             }

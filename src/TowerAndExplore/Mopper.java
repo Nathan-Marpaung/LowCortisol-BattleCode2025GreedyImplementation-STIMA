@@ -1,25 +1,19 @@
-package Nate;
+package TowerAndExplore;
 
 import battlecode.common.*;
 
 public class Mopper {
 
-    // ---- Paint thresholds for mopper ----
-    static final int MOPPER_MIN_RESERVE = 30;
-    static final int MOPPER_TRANSFER_AMOUNT = 40;
-    static final int LOW_PAINT_THRESHOLD = 50;
+    static final int minPaint = 30;
+    static final int giveAmount = 40;
+    static final int lowPaint = 50;
 
     public static void run(RobotController rc) throws GameActionException {
-        int round = rc.getRoundNum();
+        givePaint(rc);
 
-        // ---- Priority 1: Transfer paint to low-paint allies ----
-        tryTransferPaint(rc);
-
-        // ---- Priority 2: Mop swing at nearby enemies ----
         if (rc.isActionReady()) {
             RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
             if (enemies.length > 0) {
-                // Swing in the direction of the closest enemy.
                 RobotInfo closest = enemies[0];
                 int closestDist = Integer.MAX_VALUE;
                 for (RobotInfo enemy : enemies) {
@@ -36,27 +30,23 @@ public class Mopper {
             }
         }
 
-        // ---- Priority 3: Find and remove enemy paint ----
-        MapLocation enemyPaintLoc = null;
-        int bestEnemyDist = Integer.MAX_VALUE;
+        MapLocation enemyPaint = null;
+        int bestDist = Integer.MAX_VALUE;
         for (MapInfo tile : rc.senseNearbyMapInfos()) {
             if (tile.getPaint().isEnemy()) {
                 int d = rc.getLocation().distanceSquaredTo(tile.getMapLocation());
-                if (d < bestEnemyDist) {
-                    bestEnemyDist = d;
-                    enemyPaintLoc = tile.getMapLocation();
+                if (d < bestDist) {
+                    bestDist = d;
+                    enemyPaint = tile.getMapLocation();
                 }
             }
         }
 
-        if (enemyPaintLoc != null) {
-            // Move toward enemy paint.
+        if (enemyPaint != null) {
             if (rc.isMovementReady()) {
-                Util.moveGreedy(rc, enemyPaintLoc);
+                Util.moveGreedy(rc, enemyPaint);
             }
-            // Attack enemy paint to remove it.
             if (rc.isActionReady()) {
-                // Refresh search after moving.
                 for (MapInfo tile : rc.senseNearbyMapInfos()) {
                     if (tile.getPaint().isEnemy() && rc.canAttack(tile.getMapLocation())) {
                         rc.attack(tile.getMapLocation());
@@ -67,8 +57,6 @@ public class Mopper {
             return;
         }
 
-        // ---- Priority 4: actively seek unpainted/enemy territory instead of pushing
-        // blindly
         if (rc.isMovementReady()) {
             MapLocation target = Util.findNearestUnpainted(rc);
             if (target != null) {
@@ -78,7 +66,6 @@ public class Mopper {
             }
         }
 
-        // After moving, try to mop any enemy paint we've reached.
         if (rc.isActionReady()) {
             for (MapInfo tile : rc.senseNearbyMapInfos()) {
                 if (tile.getPaint().isEnemy() && rc.canAttack(tile.getMapLocation())) {
@@ -89,28 +76,28 @@ public class Mopper {
         }
     }
 
-    static boolean tryTransferPaint(RobotController rc) throws GameActionException {
-        if (rc.getPaint() <= MOPPER_MIN_RESERVE)
+    static boolean givePaint(RobotController rc) throws GameActionException {
+        if (rc.getPaint() <= minPaint)
             return false;
         RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
-        RobotInfo bestAlly = null;
-        int bestNeed = 0;
+        RobotInfo target = null;
+        int mostNeeded = 0;
         for (RobotInfo ally : allies) {
             if (ally.getType().isTowerType() || ally.getType() == UnitType.MOPPER)
                 continue;
             int need = ally.getType().paintCapacity - ally.paintAmount;
-            if (need > LOW_PAINT_THRESHOLD && need > bestNeed) {
-                bestNeed = need;
-                bestAlly = ally;
+            if (need > lowPaint && need > mostNeeded) {
+                mostNeeded = need;
+                target = ally;
             }
         }
-        if (bestAlly == null)
+        if (target == null)
             return false;
-        int amount = Math.min(MOPPER_TRANSFER_AMOUNT, Math.min(bestNeed, rc.getPaint() - MOPPER_MIN_RESERVE));
+        int amount = Math.min(giveAmount, Math.min(mostNeeded, rc.getPaint() - minPaint));
         if (amount <= 0)
             return false;
-        if (rc.canTransferPaint(bestAlly.getLocation(), amount)) {
-            rc.transferPaint(bestAlly.getLocation(), amount);
+        if (rc.canTransferPaint(target.getLocation(), amount)) {
+            rc.transferPaint(target.getLocation(), amount);
             return true;
         }
         return false;
