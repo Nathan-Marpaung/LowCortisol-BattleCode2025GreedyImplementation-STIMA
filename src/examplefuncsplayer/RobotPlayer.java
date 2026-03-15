@@ -23,6 +23,37 @@ public class RobotPlayer {
      */
     static int turnCount = 0;
 
+        // Bakal dipakai untuk menentukan keputusan bot dalam melakukan aksi
+    static Map<String, Integer> decisionTable = new HashMap<>();
+    
+    static void updateDecisionPoints(RobotController rc) {
+        int round = rc.getRoundNum();
+        decisionTable.clear();
+
+        if (round <= 400) { //EARLY GAME
+            decisionTable.put("COMPLETE_RUIN", 100);
+            decisionTable.put("BUILD_TOWER", 90);
+            decisionTable.put("TAKE_NEUTRAL_TILE", 70);
+            decisionTable.put("RESOURCE_PATTERN", 65);
+            decisionTable.put("OVERWRITE_ENEMY_TILE", 50);
+            decisionTable.put("EXPLORE", 30);
+        } else if (round <= 1200) { //MID GAME
+            decisionTable.put("COMPLETE_RUIN", 95);
+            decisionTable.put("TAKE_NEUTRAL_TILE", 85);
+            decisionTable.put("OVERWRITE_ENEMY_TILE", 80);
+            decisionTable.put("RESOURCE_PATTERN", 75);
+            decisionTable.put("ATTACK_ENEMY_TOWER", 60);
+            decisionTable.put("EXPLORE", 40);
+        } else if (round <= 2000) { //MUSIKKK
+            decisionTable.put("OVERWRITE_ENEMY_TILE", 95);
+            decisionTable.put("ATTACK_ENEMY_TOWER", 90);
+            decisionTable.put("TAKE_NEUTRAL_TILE", 80);
+            decisionTable.put("COMPLETE_RUIN", 70);
+            decisionTable.put("RESOURCE_PATTERN", 50);
+            decisionTable.put("EXPLORE", 30);
+        }
+    }
+
     /**
      * A random number generator.
      * We will use this RNG to make some random moves. The Random class is provided by the java.util.Random
