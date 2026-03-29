@@ -62,7 +62,7 @@ git clone https://github.com/Nathan-Marpaung/LowCortisol-BattleCode2025GreedyImp
 4. Jalankan perintah berikut
 \
 ```
-./gradlew build
+gradlew build
 cd client
 ```
 6. Buka aplikasi yang ada di client
