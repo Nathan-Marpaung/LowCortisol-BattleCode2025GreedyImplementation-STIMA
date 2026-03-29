@@ -54,13 +54,13 @@ Program ini memerlukan:
 ## Command atau Langkah-Langkah Compile / Build Program
 
 1. Clone repositori ini
-\
+
 ```
 git clone https://github.com/Nathan-Marpaung/LowCortisol-BattleCode2025GreedyImplementation-STIMA.git
 ```
 3. Bot akan di develop pada directory tersebut
 4. Jalankan perintah berikut
-\
+
 ```
 gradlew build
 cd client
