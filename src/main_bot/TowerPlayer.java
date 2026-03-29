@@ -1,4 +1,4 @@
-package congok;
+package main_bot;
 
 import battlecode.common.*;
 
